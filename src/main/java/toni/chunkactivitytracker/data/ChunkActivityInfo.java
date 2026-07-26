@@ -19,7 +19,7 @@ import toni.lib.networking.codecs.StreamCodec;
 #endif
 
 public class ChunkActivityInfo implements Serializable {
-    public static int CODEC_VERSION = 1;
+    public static int CODEC_VERSION = 2;
 
     static StreamCodec<ByteBuf, ChunkActivityInfo> CODEC = new StreamCodec<>() {
         public ChunkActivityInfo decode(ByteBuf buffer) {
@@ -29,14 +29,17 @@ public class ChunkActivityInfo implements Serializable {
             var time = buf.readMap((key) -> key.readUUID(), FriendlyByteBuf::readLong);
             var blocks = buf.readMap((key) -> key.readUUID(), FriendlyByteBuf::readInt);
 
+            long[] height = null;
             var hasHeightMap = buf.readBoolean();
-            if (hasHeightMap)
-            {
-                var height = buf.readLongArray();
-                return new ChunkActivityInfo(time, blocks, height);
-            } else {
-                return new ChunkActivityInfo(time, blocks, null);
+            if (hasHeightMap) {
+                height = buf.readLongArray();
             }
+
+            long lastVisited = System.currentTimeMillis();
+            if (verson >= 2) {
+                lastVisited = buf.readLong();
+            }
+            return new ChunkActivityInfo(time, blocks, height, lastVisited);
         }
 
         public void encode(ByteBuf buffer, ChunkActivityInfo info) {
@@ -52,6 +55,7 @@ public class ChunkActivityInfo implements Serializable {
             } else {
                 buf.writeBoolean(false);
             }
+            buf.writeLong(info.lastVisitedEpoch);
         }
     };
 
@@ -60,18 +64,24 @@ public class ChunkActivityInfo implements Serializable {
     @Getter private final ConcurrentHashMap<UUID, Integer> blocksPlacedMap;
 
     @Getter private long[] initialHeightmap;
+    @Getter private volatile long lastVisitedEpoch = System.currentTimeMillis();
 
     // Constructor
-    public ChunkActivityInfo(Map<UUID, Long> playerTimeInSeconds, Map<UUID, Integer> blocksPlacedByPlayer, long[] initialHeightmap) {
+    public ChunkActivityInfo(Map<UUID, Long> playerTimeInSeconds, Map<UUID, Integer> blocksPlacedByPlayer, long[] initialHeightmap, long lastVisitedEpoch) {
         this.playerTimeMap = new ConcurrentHashMap<>(playerTimeInSeconds);
         this.blocksPlacedMap = new ConcurrentHashMap<>(blocksPlacedByPlayer);
         this.initialHeightmap = initialHeightmap;
+        this.lastVisitedEpoch = lastVisitedEpoch;
+    }
+
+    public ChunkActivityInfo(Map<UUID, Long> playerTimeInSeconds, Map<UUID, Integer> blocksPlacedByPlayer, long[] initialHeightmap) {
+        this(playerTimeInSeconds, blocksPlacedByPlayer, initialHeightmap, System.currentTimeMillis());
     }
 
     public ChunkActivityInfo(LevelChunk chunk) {
         this.playerTimeMap = new ConcurrentHashMap<>();
         this.blocksPlacedMap = new ConcurrentHashMap<>();
-
+        this.lastVisitedEpoch = System.currentTimeMillis();
         if (AllConfigs.server().storeHeightmaps.get())
         {
             var heightmap = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES);
@@ -82,6 +92,7 @@ public class ChunkActivityInfo implements Serializable {
     // Update player time in the chunk
     public void updatePlayerTime(UUID player) {
         playerTimeMap.merge(player, 1L, Long::sum); // Increment by 1 second per tick
+        lastVisitedEpoch = System.currentTimeMillis();
     }
 
     public Long getPlayerTime(UUID player) {
@@ -91,6 +102,7 @@ public class ChunkActivityInfo implements Serializable {
     // Increment block placement counter for a player
     public void incrementBlocksPlaced(UUID player) {
         blocksPlacedMap.merge(player, 1, Integer::sum);
+        lastVisitedEpoch = System.currentTimeMillis();
     }
 }
 

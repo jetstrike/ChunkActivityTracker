@@ -1,5 +1,6 @@
 pluginManagement {
 	repositories {
+		mavenLocal()
 		mavenCentral()
 		gradlePluginPortal()
 		maven("https://maven.fabricmc.net/")
@@ -9,6 +10,8 @@ pluginManagement {
 		maven("https://maven.kikugie.dev/snapshots")
 		maven("https://maven.kikugie.dev/releases")
 		maven("https://maven.txni.dev/releases")
+		maven("https://maven.txni.dev/snapshots")
+		maven("https://maven.txni.dev/")
 	}  
 }
 

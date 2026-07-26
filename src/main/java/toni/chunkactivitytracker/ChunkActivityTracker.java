@@ -11,6 +11,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.LevelResource;
+import toni.chunkactivitytracker.commands.CatCommands;
 import toni.chunkactivitytracker.data.ChunkActivityMap;
 import toni.chunkactivitytracker.foundation.config.AllConfigs;
 import org.apache.logging.log4j.LogManager;
@@ -138,6 +139,8 @@ public class ChunkActivityTracker #if FABRIC implements ModInitializer, ClientMo
                 #endif
             });
         #endif
+
+        CatCommands.register();
 
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
             currentServer = null;
