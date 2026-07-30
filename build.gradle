@@ -1,0 +1,74 @@
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id("net.neoforged.moddev") version "2.0.78"
+}
+
+version = "${mod_version}"
+group = mod_group_id
+
+base {
+    archivesName = "${mod_id}-${minecraft_version}"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+println "Java: ${System.getProperty 'java.version'}, " +
+        "JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), " +
+        "Arch: ${System.getProperty 'os.arch'}"
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+repositories {
+    mavenCentral()
+}
+
+neoForge {
+    version = neo_version
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+
+    runs {
+        configureEach {
+            gameDirectory = project.file('run')
+            systemProperty 'forge.logging.console.level', 'debug'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+        client {
+            client()
+        }
+        server {
+            server()
+            programArgument '--nogui'
+        }
+    }
+}
+
+dependencies {
+}
+
+tasks.withType(ProcessResources).configureEach {
+    var replaceProperties = [
+            minecraft_version: minecraft_version,
+            neo_version: neo_version,
+            mod_id: mod_id,
+            mod_name: mod_name,
+            mod_license: mod_license,
+            mod_version: mod_version,
+            mod_authors: mod_authors,
+            mod_description: mod_description
+    ]
+    inputs.properties replaceProperties
+    filesMatching(['META-INF/neoforge.mods.toml']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

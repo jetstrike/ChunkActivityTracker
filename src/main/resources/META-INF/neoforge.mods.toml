@@ -1,27 +1,24 @@
-modLoader = "javafml"
-loaderVersion="[1,)"
-license="${license}"
-showAsResourcePack=false
-
-issueTrackerURL = "https://github.com/${github}/${name}/issues"
+modLoader="javafml"
+loaderVersion="[4,)"
+license="${mod_license}"
 
 [[mods]]
-modId="${id}"
-version="${modversion}"
-displayName="${display_name}"
-authors="${author}"
-description="${description}"
-logoFile="assets/${namespace}/textures/mod_logo.png"
-displayURL = "https://github.com/${github}/${name}/"
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+description="${mod_description}"
 
-[[mixins]]
-config = "mixins.${mixinid}.json"
-
-[[dependencies."${id}"]]
-modId="minecraft"
-mandatory=true
-versionRange="${mc}"
+[[dependencies.${mod_id}]]
+modId="neoforge"
+type="required"
+versionRange="[21.1,)"
 ordering="NONE"
 side="BOTH"
 
-${depends}
+[[dependencies.${mod_id}]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1,)"
+ordering="NONE"
+side="BOTH"
